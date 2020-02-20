@@ -4,29 +4,41 @@ declare (strict_types=1);
 
 namespace Miinto\AuthService\Sdk;
 
-use \Miinto\AuthService\Sdk\Dto;
-use \Miinto\AuthService\Sdk\Http\Client\ClientInterface as HttpClientInterface;
+use \Miinto\ApiClient\Client as MiintoClient;
+use \Miinto\ApiClient\Request\Factory as RequestFactory;
+use \Miinto\ApiClient\Response\Decoder\Json as JsonDecoder;
+use \Miinto\AuthService\Sdk\Dto\Factory as DtoFactory;
 use \Miinto\AuthService\Sdk\Dto\Mapper\FromArray\Channel as ChannelMapper;
 
 class Client
 {
-    /** @var Dto\Factory */
+    /** @var string  */
+    protected $url;
+
+    /** @var DtoFactory */
     protected $dtoFactory;
 
-    /** @var HttpClientInterface */
+    /** @var MiintoClient */
     protected $httpClient;
+
+    /** @var RequestFactory  */
+    protected $requestFactory;
 
     /**
      * AuthService constructor.
      *
-     * @param HttpClientInterface $httpClient
-     * @param Dto\Factory $dtoFactory
+     * @param MiintoClient $httpClient
+     * @param  $dtoFactory
      */
     public function __construct(
-        HttpClientInterface $httpClient,
-        Dto\Factory $dtoFactory
+        string $url,
+        MiintoClient $httpClient,
+        RequestFactory $requestFactory,
+        DtoFactory $dtoFactory
     ) {
+        $this->url = $url;
         $this->httpClient = $httpClient;
+        $this->requestFactory = $requestFactory;
         $this->dtoFactory = $dtoFactory;
     }
 
@@ -36,12 +48,16 @@ class Client
      * @GET /status
      *
      * @return array
+     *
+     * @throws \Miinto\ApiClient\Response\Exception
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function status(): array
     {
-        $path = '/status';
+        $request = $this->requestFactory->get($this->url . '/status');
+        $responseData = JsonDecoder::decode($this->httpClient->sendRequest($request));
 
-        return $this->httpClient->get($path);
+        return $responseData['data'];
     }
 
     /**
@@ -51,31 +67,37 @@ class Client
      * @param string $secret
      *
      * @return Dto\Channel
+     *
+     * @throws \Miinto\ApiClient\Response\Exception
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function createChannel(string $identifier, string $secret): Dto\Channel
     {
-        $path = '/channels';
-        $postData = [
+        $request = $this->requestFactory->post($this->url . '/channels', [], [
             'identifier' => $identifier,
             'secret' => $secret
-        ];
+        ]);
 
-        $responseData = $this->httpClient->post($path, null, $postData);
+        $responseData = JsonDecoder::decode($this->httpClient->sendRequest($request));
 
-        return ChannelMapper::map($responseData, $this->dtoFactory);
+        return ChannelMapper::map($responseData['data'], $this->dtoFactory);
     }
 
     /**
-     * @param string $channelId
-     * @param Dto\Credential $credentail
+     * @POST /channels
      *
-     * @return array
+     * @param string $channelId
+     *
+     * @return Dto\Channel
+     *
+     * @throws \Miinto\ApiClient\Response\Exception
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
-    public function getChannel(string $channelId, Dto\Credential $credentail): Dto\Channel
+    public function getChannel(string $channelId): Dto\Channel
     {
-        $path = '/channels/' . $channelId;
-        $responseData = $this->httpClient->get($path, $credentail);
+        $request = $this->requestFactory->get($this->url . '/channels/' . $channelId);
+        $responseData = JsonDecoder::decode($this->httpClient->sendRequest($request));
 
-        return ChannelMapper::map($responseData, $this->dtoFactory);
+        return ChannelMapper::map($responseData['data'], $this->dtoFactory);
     }
 }

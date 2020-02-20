@@ -9,9 +9,15 @@
   },
   "require": {
     "php": "^7.1",
-    "ext-psr": "*"
+    "miinto/api_client": "^1.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^8"
-  }
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@github.com:miinto/miinto_api_client.git"
+    }
+  ]
 }
