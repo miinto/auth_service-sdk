@@ -9,7 +9,7 @@
   },
   "require": {
     "php": "^7.1",
-    "miinto/api_client": "^1.0.4"
+    "miinto/api_client": "^1.0.6"
   },
   "require-dev": {
     "phpunit/phpunit": "^8"
